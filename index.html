@@ -22,8 +22,6 @@
         </div>
         <button type="submit" id="verifyBtn">Verify Badge</button>
       </form>
-
-      <div id="resultBox" class="result"></div>
     </div>
 
     <!-- TOGGLE ADMIN PANEL -->
@@ -31,7 +29,7 @@
 
     <!-- ADMIN MANAGEMENT PANEL -->
     <div class="card admin-panel" id="adminPanel">
-      <h2 style="color: var(--accent-blue);">Manage Registered Badges</h2>
+      <h2 style="color: var(--accent-cyan);">Manage Registered Badges</h2>
       <div class="subtitle">Add, update or remove badges (Synced Live via Cloud)</div>
 
       <form id="addBadgeForm">
@@ -54,7 +52,7 @@
             <option value="Suspended">Suspended</option>
           </select>
         </div>
-        <button type="submit" id="saveBtn" style="background-color: var(--accent-blue); color: #fff;">Save to Cloud DB</button>
+        <button type="submit" id="saveBtn">Save to Cloud DB</button>
       </form>
 
       <div class="badge-list" id="badgeList">
@@ -62,6 +60,17 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- POP-UP MODAL OVERLAY -->
+  <div id="resultModal" class="modal-overlay">
+    <div class="modal-card">
+      <button id="closeModalBtn" class="modal-close">&times;</button>
+      <div id="modalStatusBadge" class="modal-status-badge"></div>
+      <div id="modalTitle" class="modal-title"></div>
+      <div id="modalDetails" class="modal-details"></div>
+      <button id="modalDismissBtn" class="modal-action-btn">Dismiss</button>
+    </div>
   </div>
 
   <script type="module" src="app.js"></script>

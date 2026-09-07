@@ -31,20 +31,48 @@ function cleanId(input) {
   return input
     .trim()
     .toUpperCase()
-    .replace(/[\u2010-\u2015]/g, "-") // Normalizes special dash characters
-    .replace(/\s+/g, "");            // Removes hidden spaces
+    .replace(/[\u2010-\u2015]/g, "-")
+    .replace(/\s+/g, "");
 }
 
 // UI ELEMENTS
 const verifyForm = document.getElementById('verifyForm');
 const checkIdInput = document.getElementById('checkId');
-const resultBox = document.getElementById('resultBox');
 const verifyBtn = document.getElementById('verifyBtn');
 
 const addBadgeForm = document.getElementById('addBadgeForm');
 const saveBtn = document.getElementById('saveBtn');
 const badgeListContainer = document.getElementById('badgeList');
 const adminPanel = document.getElementById('adminPanel');
+
+// MODAL ELEMENTS
+const resultModal = document.getElementById('resultModal');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const modalDismissBtn = document.getElementById('modalDismissBtn');
+const modalStatusBadge = document.getElementById('modalStatusBadge');
+const modalTitle = document.getElementById('modalTitle');
+const modalDetails = document.getElementById('modalDetails');
+
+function showModal(isValid, titleText, detailsHtml) {
+  modalStatusBadge.className = `modal-status-badge ${isValid ? 'valid' : 'invalid'}`;
+  modalStatusBadge.textContent = isValid ? '✓' : '✕';
+  
+  modalTitle.className = `modal-title ${isValid ? 'valid' : 'invalid'}`;
+  modalTitle.textContent = titleText;
+  
+  modalDetails.innerHTML = detailsHtml;
+  resultModal.classList.add('active');
+}
+
+function hideModal() {
+  resultModal.classList.remove('active');
+}
+
+closeModalBtn.addEventListener('click', hideModal);
+modalDismissBtn.addEventListener('click', hideModal);
+resultModal.addEventListener('click', (e) => {
+  if (e.target === resultModal) hideModal();
+});
 
 // CORE LOOKUP FUNCTION
 async function performVerification(rawBadgeId) {
@@ -54,12 +82,6 @@ async function performVerification(rawBadgeId) {
   checkIdInput.value = badgeId;
   verifyBtn.disabled = true;
   verifyBtn.textContent = "Checking Cloud DB...";
-  resultBox.style.display = 'block';
-  resultBox.className = 'result';
-  resultBox.style.backgroundColor = '#1d263b';
-  resultBox.style.borderColor = '#374151';
-  resultBox.style.color = '#9ca3af';
-  resultBox.innerHTML = `Querying record for: <strong>${badgeId}</strong>...`;
 
   try {
     const docRef = doc(db, "badges", badgeId);
@@ -69,28 +91,32 @@ async function performVerification(rawBadgeId) {
       const worker = docSnap.data();
       const isActive = worker.status && worker.status.toLowerCase() === 'active';
 
-      resultBox.className = isActive ? 'result valid' : 'result invalid';
-      resultBox.innerHTML = `
-        ${isActive ? '✓ LEGITIMATE BADGE' : '✕ INACTIVE / REVOKED'}
-        <div class="worker-details">
-          <strong>Worker:</strong> ${worker.name || 'N/A'}<br>
-          <strong>Role:</strong> ${worker.role || 'N/A'}<br>
-          <strong>Status:</strong> <span style="color: ${isActive ? 'var(--success)' : 'var(--error)'};">${worker.status}</span>
-        </div>
+      const detailsHtml = `
+        <strong>ID:</strong> ${badgeId}<br>
+        <strong>Worker:</strong> ${worker.name || 'N/A'}<br>
+        <strong>Role:</strong> ${worker.role || 'N/A'}<br>
+        <strong>Status:</strong> <span style="color: ${isActive ? 'var(--success)' : 'var(--error)'}; font-weight: bold;">${worker.status}</span>
       `;
+
+      showModal(
+        isActive,
+        isActive ? 'Legitimate Badge' : 'Inactive / Revoked Badge',
+        detailsHtml
+      );
     } else {
-      resultBox.className = 'result invalid';
-      resultBox.innerHTML = `
-        ✕ UNKNOWN BADGE
-        <div class="worker-details" style="text-align: center;">
-          No record found for ID: <strong>${badgeId}</strong>
-        </div>
-      `;
+      showModal(
+        false,
+        'Unknown Badge',
+        `No registered record found for ID: <strong>${badgeId}</strong>`
+      );
     }
   } catch (err) {
     console.error("Firestore Fetch Error:", err);
-    resultBox.className = 'result invalid';
-    resultBox.innerHTML = `✕ ERROR: Unable to reach database. Check console logs.`;
+    showModal(
+      false,
+      'Connection Error',
+      'Unable to reach database. Check console logs or network connectivity.'
+    );
   } finally {
     verifyBtn.disabled = false;
     verifyBtn.textContent = "Verify Badge";
@@ -107,13 +133,11 @@ verifyForm.addEventListener('submit', function(e) {
 function checkUrlForBadge() {
   let badgeId = null;
 
-  // Check query string ?id=TC-2026-328W-B2JD
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has('id')) {
     badgeId = urlParams.get('id');
   }
 
-  // Fallback: check path format /idTC-2026-328W-B2JD
   if (!badgeId) {
     const path = window.location.pathname.replace('/', '');
     if (path.toLowerCase().startsWith('id')) {
@@ -126,7 +150,6 @@ function checkUrlForBadge() {
   }
 }
 
-// Run immediately when script initializes
 checkUrlForBadge();
 
 // ADD / UPDATE BADGE IN FIRESTORE
@@ -161,10 +184,10 @@ addBadgeForm.addEventListener('submit', async function(e) {
 
 // REAL-TIME SYNC FOR ADMIN LIST
 onSnapshot(badgesCollection, (snapshot) => {
-  badgeListContainer.innerHTML = '<strong style="font-size:0.8rem; color:#9ca3af; display:block; margin-bottom:0.5rem;">LIVE BADGES IN CLOUD:</strong>';
+  badgeListContainer.innerHTML = '<strong style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">LIVE BADGES IN CLOUD:</strong>';
 
   if (snapshot.empty) {
-    badgeListContainer.innerHTML += '<p style="font-size:0.85rem; color:#6b7280;">No badges found in Firestore. Add one above!</p>';
+    badgeListContainer.innerHTML += '<p style="font-size:0.85rem; color:var(--text-muted);">No badges found in Firestore. Add one above!</p>';
     return;
   }
 
@@ -178,7 +201,7 @@ onSnapshot(badgesCollection, (snapshot) => {
     div.innerHTML = `
       <div class="info">
         <div><strong>${id}</strong> - ${item.name}</div>
-        <div style="color: #9ca3af; font-size: 0.75rem;">${item.role}</div>
+        <div style="color: var(--text-muted); font-size: 0.75rem;">${item.role}</div>
         <span class="badge-status-tag ${isActive ? 'tag-active' : 'tag-suspended'}">${item.status}</span>
       </div>
       <div class="action-group">
