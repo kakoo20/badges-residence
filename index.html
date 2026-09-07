@@ -1,311 +1,444 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Official Record Verification Portal</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Optional Supabase JS Client (Uncomment if using Supabase directly) -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Construction Site Badge Verification</title>
+  <style>
+    :root {
+      --bg: #121826;
+      --card-bg: #1d263b;
+      --accent: #f59e0b;
+      --accent-blue: #3b82f6;
+      --text: #f3f4f6;
+      --success: #10b981;
+      --error: #ef4444;
+      --input-bg: #0f172a;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem 1rem;
+      box-sizing: border-box;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      border-top: 5px solid var(--accent);
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #fff;
+      font-size: 1.35rem;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: #9ca3af;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #d1d5db;
+    }
+
+    input[type="text"], select {
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      border: 1px solid #374151;
+      background-color: var(--input-bg);
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    button {
+      padding: 0.75rem;
+      border: none;
+      border-radius: 6px;
+      background-color: var(--accent);
+      color: #000;
+      font-weight: bold;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      width: 100%;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Verification Results */
+    .result {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 6px;
+      display: none;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .result.valid {
+      display: block;
+      background-color: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+
+    .result.invalid {
+      display: block;
+      background-color: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--error);
+      color: var(--error);
+    }
+
+    .worker-details {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #d1d5db;
+      font-weight: normal;
+      text-align: left;
+    }
+
+    /* Admin Panel Styling */
+    .admin-toggle {
+      background: transparent;
+      color: #9ca3af;
+      border: 1px dashed #374151;
+      font-weight: normal;
+      font-size: 0.85rem;
+    }
+
+    .admin-panel {
+      display: none;
+      border-top-color: var(--accent-blue);
+    }
+
+    .badge-list {
+      margin-top: 1rem;
+      max-height: 250px;
+      overflow-y: auto;
+      border-top: 1px solid #374151;
+      padding-top: 0.5rem;
+    }
+
+    .badge-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid #2d3748;
+      font-size: 0.85rem;
+    }
+
+    .badge-item .info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .badge-status-tag {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      width: fit-content;
+      font-weight: bold;
+    }
+
+    .tag-active { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    .tag-suspended { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+
+    .delete-btn {
+      background-color: var(--error);
+      color: #fff;
+      padding: 0.3rem 0.6rem;
+      width: auto;
+      font-size: 0.75rem;
+      border-radius: 4px;
+    }
+  </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between font-sans antialiased">
+<body>
 
-    <!-- Header / Brand Navbar -->
-    <header class="w-full bg-slate-800/80 backdrop-blur border-b border-slate-700 py-4 px-6 sticky top-0 z-50">
-        <div class="max-w-3xl mx-auto flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
-                    <i class="fa-solid fa-shield-halved text-white text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="font-bold text-lg leading-tight tracking-wide text-white">VERIFY PORTAL</h1>
-                    <p class="text-xs text-slate-400">Official Authenticity System</p>
-                </div>
-            </div>
-            <span class="text-xs px-2.5 py-1 rounded-full bg-slate-700 text-slate-300 border border-slate-600 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Live System
-            </span>
+  <div class="container">
+    
+    <!-- VERIFICATION CARD -->
+    <div class="card">
+      <h2>Site Badge Check</h2>
+      <div class="subtitle">Enter Badge ID to verify active access</div>
+
+      <form id="verifyForm">
+        <div class="form-group">
+          <label for="checkId">Badge ID</label>
+          <input type="text" id="checkId" placeholder="e.g. B-101" required autocomplete="off">
         </div>
-    </header>
+        <button type="submit" id="verifyBtn">Verify Badge</button>
+      </form>
 
-    <!-- Main Container -->
-    <main class="w-full max-w-lg mx-auto px-4 py-8 flex-grow flex flex-col justify-center">
+      <div id="resultBox" class="result"></div>
+    </div>
 
-        <!-- Manual Search Input (Shown always or when no ID in URL) -->
-        <div class="mb-6 bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60 shadow-xl">
-            <label for="manual-id-input" class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                Lookup ID or Serial Number
-            </label>
-            <div class="flex gap-2">
-                <input 
-                    type="text" 
-                    id="manual-id-input" 
-                    placeholder="Enter ID (e.g. EMP-1001)" 
-                    class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
-                >
-                <button 
-                    onclick="triggerManualSearch()" 
-                    class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition shadow-md flex items-center gap-2 shrink-0"
-                >
-                    <i class="fa-solid fa-magnifying-glass"></i> Verify
-                </button>
-            </div>
+    <!-- TOGGLE ADMIN PANEL -->
+    <button type="button" class="admin-toggle" id="toggleAdminBtn">⚙ Toggle Admin Management</button>
+
+    <!-- ADMIN MANAGEMENT PANEL -->
+    <div class="card admin-panel" id="adminPanel">
+      <h2 style="color: var(--accent-blue);">Manage Registered Badges</h2>
+      <div class="subtitle">Add, update or remove badges (Synced Live via Cloud)</div>
+
+      <form id="addBadgeForm">
+        <div class="form-group">
+          <label for="newId">Badge ID</label>
+          <input type="text" id="newId" placeholder="e.g. B-101" required>
         </div>
-
-        <!-- Dynamic Content Area -->
-        <div id="status-card-container">
-            
-            <!-- STATE 1: INITIAL / EMPTY STATE -->
-            <div id="state-empty" class="bg-slate-800/40 rounded-3xl border border-slate-700 p-8 text-center shadow-xl">
-                <div class="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                    <i class="fa-solid fa-qrcode text-2xl"></i>
-                </div>
-                <h2 class="text-xl font-semibold text-slate-200 mb-2">Scan or Enter an ID</h2>
-                <p class="text-sm text-slate-400 leading-relaxed">
-                    Scan the QR code on the credential or document, or type the reference ID above to check authenticity.
-                </p>
-            </div>
-
-            <!-- STATE 2: LOADING STATE -->
-            <div id="state-loading" class="hidden bg-slate-800/40 rounded-3xl border border-slate-700 p-12 text-center shadow-xl">
-                <div class="inline-block animate-spin text-indigo-500 text-4xl mb-4">
-                    <i class="fa-solid fa-circle-notch"></i>
-                </div>
-                <h3 class="text-lg font-medium text-slate-200">Searching Database...</h3>
-                <p class="text-xs text-slate-400 mt-1">Verifying digital signature and record integrity</p>
-            </div>
-
-            <!-- STATE 3: VERIFIED / VALID STATE -->
-            <div id="state-verified" class="hidden bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-2xl transition-all">
-                
-                <!-- Status Banner Header -->
-                <div class="bg-emerald-500/10 border-b border-emerald-500/20 p-5 text-center flex flex-col items-center justify-center">
-                    <div class="w-12 h-12 bg-emerald-500 text-slate-950 rounded-full flex items-center justify-center text-xl font-bold mb-2 shadow-lg shadow-emerald-500/20">
-                        <i class="fa-solid fa-check"></i>
-                    </div>
-                    <span class="inline-block bg-emerald-500/20 text-emerald-400 font-bold text-xs px-3 py-1 rounded-full border border-emerald-500/30 tracking-widest uppercase mb-1">
-                        Verified & Authentic Record
-                    </span>
-                    <p class="text-xs text-slate-400">This record is registered in our official database</p>
-                </div>
-
-                <!-- Record Details Body -->
-                <div class="p-6 space-y-5">
-                    
-                    <!-- Avatar / Photo (Optional) -->
-                    <div class="flex items-center gap-4 pb-4 border-b border-slate-700/60">
-                        <img id="record-photo" src="https://via.placeholder.com/150" alt="Profile/Document" class="w-16 h-16 rounded-2xl object-cover border-2 border-slate-600 bg-slate-900">
-                        <div>
-                            <h3 id="record-name" class="text-xl font-bold text-white">John Doe</h3>
-                            <p id="record-role" class="text-sm text-indigo-400 font-medium">Software Engineer</p>
-                            <p id="record-company" class="text-xs text-slate-400 mt-0.5">EURL TIN COST</p>
-                        </div>
-                    </div>
-
-                    <!-- Metadata Grid -->
-                    <div class="grid grid-cols-2 gap-4 text-xs">
-                        <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
-                            <span class="text-slate-400 block mb-1">ID Number</span>
-                            <span id="record-id" class="font-mono text-slate-200 font-bold text-sm">EMP-1001</span>
-                        </div>
-                        <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
-                            <span class="text-slate-400 block mb-1">Status</span>
-                            <span id="record-status" class="text-emerald-400 font-bold text-sm flex items-center gap-1">
-                                <i class="fa-solid fa-circle text-[8px]"></i> Active
-                            </span>
-                        </div>
-                        <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
-                            <span class="text-slate-400 block mb-1">Issue Date</span>
-                            <span id="record-issued" class="text-slate-200 font-medium">2026-01-15</span>
-                        </div>
-                        <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
-                            <span class="text-slate-400 block mb-1">Expiry Date</span>
-                            <span id="record-expiry" class="text-slate-200 font-medium">2027-01-15</span>
-                        </div>
-                    </div>
-
-                    <!-- Verification Timestamp Seal -->
-                    <div class="bg-slate-900/40 p-3 rounded-xl border border-slate-700/30 flex items-center justify-between text-xs text-slate-400">
-                        <span class="flex items-center gap-1.5">
-                            <i class="fa-solid fa-clock text-indigo-400"></i> Verified On
-                        </span>
-                        <span id="verification-time" class="font-mono text-slate-300">--</span>
-                    </div>
-
-                </div>
-
-                <!-- Footer Seal -->
-                <div class="bg-slate-900/80 px-6 py-3 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-400">
-                    <span class="flex items-center gap-1 text-slate-400">
-                        <i class="fa-solid fa-lock text-indigo-400"></i> Secure Digital Seal
-                    </span>
-                    <span class="font-mono text-[10px] text-slate-500" id="record-hash">HASH-9A82B3</span>
-                </div>
-            </div>
-
-            <!-- STATE 4: NOT FOUND / INVALID STATE -->
-            <div id="state-invalid" class="hidden bg-slate-800 rounded-3xl border border-rose-500/30 overflow-hidden shadow-2xl">
-                <div class="bg-rose-500/10 border-b border-rose-500/20 p-6 text-center flex flex-col items-center justify-center">
-                    <div class="w-12 h-12 bg-rose-500 text-white rounded-full flex items-center justify-center text-xl font-bold mb-3 shadow-lg shadow-rose-500/20">
-                        <i class="fa-solid fa-xmark"></i>
-                    </div>
-                    <span class="inline-block bg-rose-500/20 text-rose-400 font-bold text-xs px-3 py-1 rounded-full border border-rose-500/30 tracking-widest uppercase mb-1">
-                        Unverified / Record Not Found
-                    </span>
-                    <p class="text-xs text-slate-400 mt-1 max-w-xs">
-                        The requested ID <span id="invalid-id-tag" class="font-mono text-rose-300 underline">--</span> was not recognized in our database.
-                    </p>
-                </div>
-                <div class="p-6 text-center text-xs text-slate-400 space-y-3">
-                    <p>Possible causes:</p>
-                    <ul class="list-disc list-inside text-left max-w-xs mx-auto space-y-1 text-slate-400">
-                        <li>The QR code URL is modified or corrupted.</li>
-                        <li>The badge or document has been revoked.</li>
-                        <li>The ID was entered incorrectly.</li>
-                    </ul>
-                </div>
-            </div>
-
+        <div class="form-group">
+          <label for="newName">Full Name</label>
+          <input type="text" id="newName" placeholder="Worker Name" required>
         </div>
-    </main>
+        <div class="form-group">
+          <label for="newRole">Role / Trade</label>
+          <input type="text" id="newRole" placeholder="e.g. Mason, Electrician" required>
+        </div>
+        <div class="form-group">
+          <label for="newStatus">Status</label>
+          <select id="newStatus">
+            <option value="Active">Active</option>
+            <option value="Suspended">Suspended</option>
+          </select>
+        </div>
+        <button type="submit" id="saveBtn" style="background-color: var(--accent-blue); color: #fff;">Save to Cloud DB</button>
+      </form>
 
-    <!-- Footer -->
-    <footer class="w-full text-center py-4 border-t border-slate-800 text-xs text-slate-400">
-        &copy; <span id="year"></span> Official Verification System. All rights reserved.
-    </footer>
+      <div class="badge-list" id="badgeList">
+        <p style="text-align: center; color: #9ca3af; font-size: 0.85rem;">Loading cloud database...</p>
+      </div>
+    </div>
 
-    <!-- JavaScript Logic -->
-    <script>
-        document.getElementById('year').textContent = new Date().getFullYear();
+  </div>
 
-        // -------------------------------------------------------------
-        // MOCK DATABASE (For testing out-of-the-box)
-        // Replace or connect this with Supabase / REST API fetch logic!
-        // -------------------------------------------------------------
-        const mockDatabase = {
-            "EMP-1001": {
-                name: "Abdelhakim Brahmi",
-                role: "General Manager & Founder",
-                company: "EURL TIN COST",
-                status: "Active",
-                issued: "2025-01-10",
-                expiry: "2027-01-10",
-                photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-                hash: "SEC-8A91B2C3"
-            },
-            "EMP-1002": {
-                name: "Sarah Amrani",
-                role: "Site Civil Engineer",
-                company: "EURL TIN COST",
-                status: "Active",
-                issued: "2025-03-01",
-                expiry: "2027-03-01",
-                photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
-                hash: "SEC-4F5E6D7C"
-            }
-        };
+  <!-- FIREBASE MODULE SCRIPT -->
+  <!-- FIREBASE MODULE SCRIPT -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { 
+    getFirestore, 
+    doc, 
+    getDoc, 
+    setDoc, 
+    deleteDoc, 
+    collection, 
+    onSnapshot 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // -------------------------------------------------------------
-        // Core Verification Controller
-        // -------------------------------------------------------------
-        async function fetchAndVerifyRecord(id) {
-            if (!id) return;
+  // 1. YOUR FIREBASE CONFIGURATION
+  const firebaseConfig = {
+   apiKey: "AIzaSyDjVRDGg32mwD5FD1g4fmgA0BgTJYMLwOw",
+   authDomain: "badge-residence.firebaseapp.com",
+   projectId: "badge-residence",
+   storageBucket: "badge-residence.firebasestorage.app",
+   messagingSenderId: "127189334832",
+   appId: "1:127189334832:web:418ceaf8e79faad086e6f5",
+   measurementId: "G-9R66KLFZYP"
+   };
+  
 
-            showState('loading');
+  // 2. INITIALIZE FIREBASE & FIRESTORE
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const badgesCollection = collection(db, "badges");
 
-            // Simulate database latency (0.6 seconds)
-            await new Promise(resolve => setTimeout(resolve, 600));
+  // Helper function to sanitize IDs cleanly
+  function cleanId(input) {
+    return input
+      .trim()
+      .toUpperCase()
+      .replace(/[\u2010-\u2015]/g, "-") // Normalizes special dash characters to standard hyphens
+      .replace(/\s+/g, "");            // Removes hidden whitespaces
+  }
 
-            // ---------------------------------------------------------
-            // OPTION A: MOCK DB SEARCH
-            // ---------------------------------------------------------
-            const record = mockDatabase[id.trim().toUpperCase()];
+  // UI ELEMENTS
+  const verifyForm = document.getElementById('verifyForm');
+  const checkIdInput = document.getElementById('checkId');
+  const resultBox = document.getElementById('resultBox');
+  const verifyBtn = document.getElementById('verifyBtn');
 
-            // ---------------------------------------------------------
-            // OPTION B: SUPABASE / REST API FETCH (Uncomment to use real DB)
-            // ---------------------------------------------------------
-            /*
-            let record = null;
-            try {
-                const response = await fetch(`https://YOUR_API_ENDPOINT/verify?id=${encodeURIComponent(id)}`);
-                if (response.ok) {
-                    record = await response.json();
-                }
-            } catch (err) {
-                console.error("API error:", err);
-            }
-            */
+  const addBadgeForm = document.getElementById('addBadgeForm');
+  const saveBtn = document.getElementById('saveBtn');
+  const badgeListContainer = document.getElementById('badgeList');
+  const adminPanel = document.getElementById('adminPanel');
 
-            if (record) {
-                displayVerifiedRecord(id.toUpperCase(), record);
-            } else {
-                displayInvalidRecord(id.toUpperCase());
-            }
+  // VERIFY BADGE LOOKUP
+  verifyForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Sanitize search input
+    const badgeId = cleanId(checkIdInput.value);
+
+    if (!badgeId) return;
+
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = "Checking Cloud DB...";
+    resultBox.style.display = 'block';
+    resultBox.className = 'result';
+    resultBox.style.backgroundColor = '#1d263b';
+    resultBox.style.borderColor = '#374151';
+    resultBox.style.color = '#9ca3af';
+    resultBox.innerHTML = `Querying record for: <strong>${badgeId}</strong>...`;
+
+    try {
+      const docRef = doc(db, "badges", badgeId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const worker = docSnap.data();
+        const isActive = worker.status && worker.status.toLowerCase() === 'active';
+
+        resultBox.className = isActive ? 'result valid' : 'result invalid';
+        resultBox.innerHTML = `
+          ${isActive ? '✓ LEGITIMATE BADGE' : '✕ INACTIVE / REVOKED'}
+          <div class="worker-details">
+            <strong>Worker:</strong> ${worker.name || 'N/A'}<br>
+            <strong>Role:</strong> ${worker.role || 'N/A'}<br>
+            <strong>Status:</strong> <span style="color: ${isActive ? 'var(--success)' : 'var(--error)'};">${worker.status}</span>
+          </div>
+        `;
+      } else {
+        resultBox.className = 'result invalid';
+        resultBox.innerHTML = `
+          ✕ UNKNOWN BADGE
+          <div class="worker-details" style="text-align: center;">
+            No record found for ID: <strong>${badgeId}</strong>
+          </div>
+        `;
+      }
+    } catch (err) {
+      console.error("Firestore Fetch Error:", err);
+      resultBox.className = 'result invalid';
+      resultBox.innerHTML = `✕ ERROR: Unable to reach database. Check console logs.`;
+    } finally {
+      verifyBtn.disabled = false;
+      verifyBtn.textContent = "Verify Badge";
+    }
+  });
+
+  // ADD / UPDATE BADGE IN FIRESTORE
+  addBadgeForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Sanitize input before saving ID
+    const id = cleanId(document.getElementById('newId').value);
+    const name = document.getElementById('newName').value.trim();
+    const role = document.getElementById('newRole').value.trim();
+    const status = document.getElementById('newStatus').value;
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+
+    try {
+      await setDoc(doc(db, "badges", id), {
+        name: name,
+        role: role,
+        status: status,
+        updatedAt: new Date().toISOString()
+      });
+
+      addBadgeForm.reset();
+    } catch (err) {
+      console.error("Error saving badge:", err);
+      alert("Failed to save badge to cloud DB. Check browser console.");
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save to Cloud DB";
+    }
+  });
+
+  // REAL-TIME SYNC FOR ADMIN LIST
+  onSnapshot(badgesCollection, (snapshot) => {
+    badgeListContainer.innerHTML = '<strong style="font-size:0.8rem; color:#9ca3af; display:block; margin-bottom:0.5rem;">LIVE BADGES IN CLOUD:</strong>';
+
+    if (snapshot.empty) {
+      badgeListContainer.innerHTML += '<p style="font-size:0.85rem; color:#6b7280;">No badges found in Firestore. Add one above!</p>';
+      return;
+    }
+
+    snapshot.forEach((docSnap) => {
+      const item = docSnap.data();
+      const id = docSnap.id;
+      const isActive = item.status === 'Active';
+
+      const div = document.createElement('div');
+      div.className = 'badge-item';
+      div.innerHTML = `
+        <div class="info">
+          <div><strong>${id}</strong> - ${item.name}</div>
+          <div style="color: #9ca3af; font-size: 0.75rem;">${item.role}</div>
+          <span class="badge-status-tag ${isActive ? 'tag-active' : 'tag-suspended'}">${item.status}</span>
+        </div>
+        <button class="delete-btn" data-id="${id}">Delete</button>
+      `;
+
+      div.querySelector('.delete-btn').addEventListener('click', async () => {
+        if (confirm(`Delete badge ${id} from cloud DB?`)) {
+          await deleteDoc(doc(db, "badges", id));
         }
+      });
 
-        // Render Verified UI
-        function displayVerifiedRecord(id, record) {
-            document.getElementById('record-id').textContent = id;
-            document.getElementById('record-name').textContent = record.name;
-            document.getElementById('record-role').textContent = record.role;
-            document.getElementById('record-company').textContent = record.company || 'Official Partner';
-            document.getElementById('record-issued').textContent = record.issued || 'N/A';
-            document.getElementById('record-expiry').textContent = record.expiry || 'N/A';
-            document.getElementById('record-photo').src = record.photo || 'https://via.placeholder.com/150';
-            document.getElementById('record-hash').textContent = record.hash || 'SEC-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+      badgeListContainer.appendChild(div);
+    });
+  }, (error) => {
+    console.error("Snapshot listener error:", error);
+    badgeListContainer.innerHTML = '<p style="color: var(--error); font-size: 0.85rem;">Error loading live data from Cloud DB.</p>';
+  });
 
-            // Verification Timestamp
-            const now = new Date();
-            document.getElementById('verification-time').textContent = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+  // ADMIN PANEL TOGGLE
+  document.getElementById('toggleAdminBtn').addEventListener('click', () => {
+    adminPanel.style.display = adminPanel.style.display === 'block' ? 'none' : 'block';
+  });
+</script>
 
-            showState('verified');
-        }
-
-        // Render Invalid UI
-        function displayInvalidRecord(id) {
-            document.getElementById('invalid-id-tag').textContent = id;
-            showState('invalid');
-        }
-
-        // UI State Switcher
-        function showState(state) {
-            document.getElementById('state-empty').classList.add('hidden');
-            document.getElementById('state-loading').classList.add('hidden');
-            document.getElementById('state-verified').classList.add('hidden');
-            document.getElementById('state-invalid').classList.add('hidden');
-
-            if (state === 'loading') document.getElementById('state-loading').classList.remove('hidden');
-            else if (state === 'verified') document.getElementById('state-verified').classList.remove('hidden');
-            else if (state === 'invalid') document.getElementById('state-invalid').classList.remove('hidden');
-            else document.getElementById('state-empty').classList.remove('hidden');
-        }
-
-        // Trigger manual search from input
-        function triggerManualSearch() {
-            const inputVal = document.getElementById('manual-id-input').value.trim();
-            if (inputVal) {
-                // Update URL query string dynamically without refreshing page
-                const newUrl = window.location.pathname + '?id=' + encodeURIComponent(inputVal);
-                window.history.pushState({ path: newUrl }, '', newUrl);
-                
-                fetchAndVerifyRecord(inputVal);
-            }
-        }
-
-        // Auto-run on Page Load when QR code is scanned
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            // Accepts ?id=..., ?code=..., or ?verify=...
-            const targetId = urlParams.get('id') || urlParams.get('code') || urlParams.get('verify');
-
-            if (targetId) {
-                document.getElementById('manual-id-input').value = targetId;
-                fetchAndVerifyRecord(targetId);
-            }
-        });
-    </script>
 </body>
 </html>
