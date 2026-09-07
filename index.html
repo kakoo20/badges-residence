@@ -324,15 +324,30 @@
     const adminPanel = document.getElementById('adminPanel');
 
     // AUTO-VERIFY FROM URL PARAMETER (?id=BADGE_ID)
-    window.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlBadgeId = urlParams.get('id');
+    // AUTO-VERIFY FROM URL PARAMETERS OR PATH
+window.addEventListener('DOMContentLoaded', () => {
+  let badgeId = null;
 
-      if (urlBadgeId) {
-        checkIdInput.value = urlBadgeId;
-        verifyForm.dispatchEvent(new Event('submit'));
-      }
-    });
+  // 1. Check query parameter: ?id=TC-2026-328W-B2JD
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('id')) {
+    badgeId = urlParams.get('id');
+  } 
+
+  // 2. Fallback check for path format: /idTC-2026-328W-B2JD
+  if (!badgeId) {
+    const path = window.location.pathname.replace('/', '');
+    if (path.toLowerCase().startsWith('id')) {
+      badgeId = path.substring(2); // Strips "id" from the start
+    }
+  }
+
+  // Execute lookup if an ID was detected
+  if (badgeId) {
+    checkIdInput.value = cleanId(badgeId);
+    verifyForm.dispatchEvent(new Event('submit'));
+  }
+});
 
     // VERIFY BADGE LOOKUP
     verifyForm.addEventListener('submit', async function(e) {
