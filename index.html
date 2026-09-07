@@ -192,6 +192,20 @@
     .tag-active { background: rgba(16, 185, 129, 0.2); color: var(--success); }
     .tag-suspended { background: rgba(239, 68, 68, 0.2); color: var(--error); }
 
+    .action-group {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .status-btn {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+      width: auto;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
     .delete-btn {
       background-color: var(--error);
       color: #fff;
@@ -214,7 +228,7 @@
       <form id="verifyForm">
         <div class="form-group">
           <label for="checkId">Badge ID</label>
-          <input type="text" id="checkId" placeholder="e.g. B-101" required autocomplete="off">
+          <input type="text" id="checkId" placeholder="e.g. TC-2026-328W-B2JD" required autocomplete="off">
         </div>
         <button type="submit" id="verifyBtn">Verify Badge</button>
       </form>
@@ -233,7 +247,7 @@
       <form id="addBadgeForm">
         <div class="form-group">
           <label for="newId">Badge ID</label>
-          <input type="text" id="newId" placeholder="e.g. B-101" required>
+          <input type="text" id="newId" placeholder="e.g. TC-2026-328W-B2JD" required>
         </div>
         <div class="form-group">
           <label for="newName">Full Name</label>
@@ -261,184 +275,206 @@
   </div>
 
   <!-- FIREBASE MODULE SCRIPT -->
-  <!-- FIREBASE MODULE SCRIPT -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { 
-    getFirestore, 
-    doc, 
-    getDoc, 
-    setDoc, 
-    deleteDoc, 
-    collection, 
-    onSnapshot 
-  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      doc, 
+      getDoc, 
+      setDoc, 
+      deleteDoc, 
+      collection, 
+      onSnapshot 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  // 1. YOUR FIREBASE CONFIGURATION
-  const firebaseConfig = {
-   apiKey: "AIzaSyDjVRDGg32mwD5FD1g4fmgA0BgTJYMLwOw",
-   authDomain: "badge-residence.firebaseapp.com",
-   projectId: "badge-residence",
-   storageBucket: "badge-residence.firebasestorage.app",
-   messagingSenderId: "127189334832",
-   appId: "1:127189334832:web:418ceaf8e79faad086e6f5",
-   measurementId: "G-9R66KLFZYP"
-   };
-  
+    // 1. FIREBASE CONFIGURATION
+    const firebaseConfig = {
+      apiKey: "AIzaSyDjVRDGg32mwD5FD1g4fmgA0BgTJYMLwOw",
+      authDomain: "badge-residence.firebaseapp.com",
+      projectId: "badge-residence",
+      storageBucket: "badge-residence.firebasestorage.app",
+      messagingSenderId: "127189334832",
+      appId: "1:127189334832:web:418ceaf8e79faad086e6f5",
+      measurementId: "G-9R66KLFZYP"
+    };
 
-  // 2. INITIALIZE FIREBASE & FIRESTORE
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const badgesCollection = collection(db, "badges");
+    // 2. INITIALIZE FIREBASE & FIRESTORE
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const badgesCollection = collection(db, "badges");
 
-  // Helper function to sanitize IDs cleanly
-  function cleanId(input) {
-    return input
-      .trim()
-      .toUpperCase()
-      .replace(/[\u2010-\u2015]/g, "-") // Normalizes special dash characters to standard hyphens
-      .replace(/\s+/g, "");            // Removes hidden whitespaces
-  }
+    // Helper function to sanitize IDs
+    function cleanId(input) {
+      return input
+        .trim()
+        .toUpperCase()
+        .replace(/[\u2010-\u2015]/g, "-") // Normalizes special dash characters to standard hyphens
+        .replace(/\s+/g, "");            // Removes hidden spaces
+    }
 
-  // UI ELEMENTS
-  const verifyForm = document.getElementById('verifyForm');
-  const checkIdInput = document.getElementById('checkId');
-  const resultBox = document.getElementById('resultBox');
-  const verifyBtn = document.getElementById('verifyBtn');
+    // UI ELEMENTS
+    const verifyForm = document.getElementById('verifyForm');
+    const checkIdInput = document.getElementById('checkId');
+    const resultBox = document.getElementById('resultBox');
+    const verifyBtn = document.getElementById('verifyBtn');
 
-  const addBadgeForm = document.getElementById('addBadgeForm');
-  const saveBtn = document.getElementById('saveBtn');
-  const badgeListContainer = document.getElementById('badgeList');
-  const adminPanel = document.getElementById('adminPanel');
+    const addBadgeForm = document.getElementById('addBadgeForm');
+    const saveBtn = document.getElementById('saveBtn');
+    const badgeListContainer = document.getElementById('badgeList');
+    const adminPanel = document.getElementById('adminPanel');
 
-  // VERIFY BADGE LOOKUP
-  verifyForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    // Sanitize search input
-    const badgeId = cleanId(checkIdInput.value);
+    // AUTO-VERIFY FROM URL PARAMETER (?id=BADGE_ID)
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlBadgeId = urlParams.get('id');
 
-    if (!badgeId) return;
-
-    verifyBtn.disabled = true;
-    verifyBtn.textContent = "Checking Cloud DB...";
-    resultBox.style.display = 'block';
-    resultBox.className = 'result';
-    resultBox.style.backgroundColor = '#1d263b';
-    resultBox.style.borderColor = '#374151';
-    resultBox.style.color = '#9ca3af';
-    resultBox.innerHTML = `Querying record for: <strong>${badgeId}</strong>...`;
-
-    try {
-      const docRef = doc(db, "badges", badgeId);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const worker = docSnap.data();
-        const isActive = worker.status && worker.status.toLowerCase() === 'active';
-
-        resultBox.className = isActive ? 'result valid' : 'result invalid';
-        resultBox.innerHTML = `
-          ${isActive ? '✓ LEGITIMATE BADGE' : '✕ INACTIVE / REVOKED'}
-          <div class="worker-details">
-            <strong>Worker:</strong> ${worker.name || 'N/A'}<br>
-            <strong>Role:</strong> ${worker.role || 'N/A'}<br>
-            <strong>Status:</strong> <span style="color: ${isActive ? 'var(--success)' : 'var(--error)'};">${worker.status}</span>
-          </div>
-        `;
-      } else {
-        resultBox.className = 'result invalid';
-        resultBox.innerHTML = `
-          ✕ UNKNOWN BADGE
-          <div class="worker-details" style="text-align: center;">
-            No record found for ID: <strong>${badgeId}</strong>
-          </div>
-        `;
+      if (urlBadgeId) {
+        checkIdInput.value = urlBadgeId;
+        verifyForm.dispatchEvent(new Event('submit'));
       }
-    } catch (err) {
-      console.error("Firestore Fetch Error:", err);
-      resultBox.className = 'result invalid';
-      resultBox.innerHTML = `✕ ERROR: Unable to reach database. Check console logs.`;
-    } finally {
-      verifyBtn.disabled = false;
-      verifyBtn.textContent = "Verify Badge";
-    }
-  });
-
-  // ADD / UPDATE BADGE IN FIRESTORE
-  addBadgeForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    // Sanitize input before saving ID
-    const id = cleanId(document.getElementById('newId').value);
-    const name = document.getElementById('newName').value.trim();
-    const role = document.getElementById('newRole').value.trim();
-    const status = document.getElementById('newStatus').value;
-
-    saveBtn.disabled = true;
-    saveBtn.textContent = "Saving...";
-
-    try {
-      await setDoc(doc(db, "badges", id), {
-        name: name,
-        role: role,
-        status: status,
-        updatedAt: new Date().toISOString()
-      });
-
-      addBadgeForm.reset();
-    } catch (err) {
-      console.error("Error saving badge:", err);
-      alert("Failed to save badge to cloud DB. Check browser console.");
-    } finally {
-      saveBtn.disabled = false;
-      saveBtn.textContent = "Save to Cloud DB";
-    }
-  });
-
-  // REAL-TIME SYNC FOR ADMIN LIST
-  onSnapshot(badgesCollection, (snapshot) => {
-    badgeListContainer.innerHTML = '<strong style="font-size:0.8rem; color:#9ca3af; display:block; margin-bottom:0.5rem;">LIVE BADGES IN CLOUD:</strong>';
-
-    if (snapshot.empty) {
-      badgeListContainer.innerHTML += '<p style="font-size:0.85rem; color:#6b7280;">No badges found in Firestore. Add one above!</p>';
-      return;
-    }
-
-    snapshot.forEach((docSnap) => {
-      const item = docSnap.data();
-      const id = docSnap.id;
-      const isActive = item.status === 'Active';
-
-      const div = document.createElement('div');
-      div.className = 'badge-item';
-      div.innerHTML = `
-        <div class="info">
-          <div><strong>${id}</strong> - ${item.name}</div>
-          <div style="color: #9ca3af; font-size: 0.75rem;">${item.role}</div>
-          <span class="badge-status-tag ${isActive ? 'tag-active' : 'tag-suspended'}">${item.status}</span>
-        </div>
-        <button class="delete-btn" data-id="${id}">Delete</button>
-      `;
-
-      div.querySelector('.delete-btn').addEventListener('click', async () => {
-        if (confirm(`Delete badge ${id} from cloud DB?`)) {
-          await deleteDoc(doc(db, "badges", id));
-        }
-      });
-
-      badgeListContainer.appendChild(div);
     });
-  }, (error) => {
-    console.error("Snapshot listener error:", error);
-    badgeListContainer.innerHTML = '<p style="color: var(--error); font-size: 0.85rem;">Error loading live data from Cloud DB.</p>';
-  });
 
-  // ADMIN PANEL TOGGLE
-  document.getElementById('toggleAdminBtn').addEventListener('click', () => {
-    adminPanel.style.display = adminPanel.style.display === 'block' ? 'none' : 'block';
-  });
-</script>
+    // VERIFY BADGE LOOKUP
+    verifyForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const badgeId = cleanId(checkIdInput.value);
+      if (!badgeId) return;
+
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = "Checking Cloud DB...";
+      resultBox.style.display = 'block';
+      resultBox.className = 'result';
+      resultBox.style.backgroundColor = '#1d263b';
+      resultBox.style.borderColor = '#374151';
+      resultBox.style.color = '#9ca3af';
+      resultBox.innerHTML = `Querying record for: <strong>${badgeId}</strong>...`;
+
+      try {
+        const docRef = doc(db, "badges", badgeId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const worker = docSnap.data();
+          const isActive = worker.status && worker.status.toLowerCase() === 'active';
+
+          resultBox.className = isActive ? 'result valid' : 'result invalid';
+          resultBox.innerHTML = `
+            ${isActive ? '✓ LEGITIMATE BADGE' : '✕ INACTIVE / REVOKED'}
+            <div class="worker-details">
+              <strong>Worker:</strong> ${worker.name || 'N/A'}<br>
+              <strong>Role:</strong> ${worker.role || 'N/A'}<br>
+              <strong>Status:</strong> <span style="color: ${isActive ? 'var(--success)' : 'var(--error)'};">${worker.status}</span>
+            </div>
+          `;
+        } else {
+          resultBox.className = 'result invalid';
+          resultBox.innerHTML = `
+            ✕ UNKNOWN BADGE
+            <div class="worker-details" style="text-align: center;">
+              No record found for ID: <strong>${badgeId}</strong>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error("Firestore Fetch Error:", err);
+        resultBox.className = 'result invalid';
+        resultBox.innerHTML = `✕ ERROR: Unable to reach database. Check console logs.`;
+      } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = "Verify Badge";
+      }
+    });
+
+    // ADD / UPDATE BADGE IN FIRESTORE
+    addBadgeForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const id = cleanId(document.getElementById('newId').value);
+      const name = document.getElementById('newName').value.trim();
+      const role = document.getElementById('newRole').value.trim();
+      const status = document.getElementById('newStatus').value;
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving...";
+
+      try {
+        await setDoc(doc(db, "badges", id), {
+          name: name,
+          role: role,
+          status: status,
+          updatedAt: new Date().toISOString()
+        });
+
+        addBadgeForm.reset();
+      } catch (err) {
+        console.error("Error saving badge:", err);
+        alert("Failed to save badge to cloud DB. Check browser console.");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Save to Cloud DB";
+      }
+    });
+
+    // REAL-TIME SYNC FOR ADMIN LIST WITH STATUS TOGGLE
+    onSnapshot(badgesCollection, (snapshot) => {
+      badgeListContainer.innerHTML = '<strong style="font-size:0.8rem; color:#9ca3af; display:block; margin-bottom:0.5rem;">LIVE BADGES IN CLOUD:</strong>';
+
+      if (snapshot.empty) {
+        badgeListContainer.innerHTML += '<p style="font-size:0.85rem; color:#6b7280;">No badges found in Firestore. Add one above!</p>';
+        return;
+      }
+
+      snapshot.forEach((docSnap) => {
+        const item = docSnap.data();
+        const id = docSnap.id;
+        const isActive = item.status === 'Active';
+
+        const div = document.createElement('div');
+        div.className = 'badge-item';
+        div.innerHTML = `
+          <div class="info">
+            <div><strong>${id}</strong> - ${item.name}</div>
+            <div style="color: #9ca3af; font-size: 0.75rem;">${item.role}</div>
+            <span class="badge-status-tag ${isActive ? 'tag-active' : 'tag-suspended'}">${item.status}</span>
+          </div>
+          <div class="action-group">
+            <button class="status-btn" style="background-color: ${isActive ? '#f59e0b' : '#10b981'}; color: #000;">
+              ${isActive ? 'Suspend' : 'Activate'}
+            </button>
+            <button class="delete-btn">Delete</button>
+          </div>
+        `;
+
+        // Toggle Status
+        div.querySelector('.status-btn').addEventListener('click', async () => {
+          const newStatus = isActive ? 'Suspended' : 'Active';
+          await setDoc(doc(db, "badges", id), {
+            ...item,
+            status: newStatus,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+        });
+
+        // Delete Document
+        div.querySelector('.delete-btn').addEventListener('click', async () => {
+          if (confirm(`Delete badge ${id} from cloud DB?`)) {
+            await deleteDoc(doc(db, "badges", id));
+          }
+        });
+
+        badgeListContainer.appendChild(div);
+      });
+    }, (error) => {
+      console.error("Snapshot listener error:", error);
+      badgeListContainer.innerHTML = '<p style="color: var(--error); font-size: 0.85rem;">Error loading live data from Cloud DB.</p>';
+    });
+
+    // ADMIN PANEL TOGGLE
+    document.getElementById('toggleAdminBtn').addEventListener('click', () => {
+      adminPanel.style.display = adminPanel.style.display === 'block' ? 'none' : 'block';
+    });
+  </script>
 
 </body>
 </html>
