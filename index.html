@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Construction Site Badge Verification</title>
+  <title>Vérification des Badges de Chantier</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,51 +12,51 @@
     
     <!-- VERIFICATION CARD -->
     <div class="card">
-      <h2>Site Badge Check</h2>
-      <div class="subtitle">Enter Badge ID to verify active access</div>
+      <h2>Vérification de Badge Chantier</h2>
+      <div class="subtitle">Entrez l'ID du badge pour vérifier l'accès actif</div>
 
       <form id="verifyForm">
         <div class="form-group">
-          <label for="checkId">Badge ID</label>
-          <input type="text" id="checkId" placeholder="e.g. TC-2026-328W-B2JD" required autocomplete="off">
+          <label for="checkId">ID du Badge</label>
+          <input type="text" id="checkId" placeholder="ex. TC-2026-328W-B2JD" required autocomplete="off">
         </div>
-        <button type="submit" id="verifyBtn">Verify Badge</button>
+        <button type="submit" id="verifyBtn">Vérifier le Badge</button>
       </form>
     </div>
 
     <!-- TOGGLE ADMIN PANEL -->
-    <button type="button" class="admin-toggle" id="toggleAdminBtn">⚙ Toggle Admin Management</button>
+    <button type="button" class="admin-toggle" id="toggleAdminBtn">⚙ Afficher/Masquer la Gestion Admin</button>
 
     <!-- ADMIN MANAGEMENT PANEL -->
     <div class="card admin-panel" id="adminPanel">
-      <h2 style="color: var(--accent-cyan);">Manage Registered Badges</h2>
-      <div class="subtitle">Add, update or remove badges (Synced Live via Cloud)</div>
+      <h2 style="color: var(--accent-cyan);">Gérer les Badges Enregistrés</h2>
+      <div class="subtitle">Ajouter, mettre à jour ou supprimer des badges (Synchronisé en direct via le Cloud)</div>
 
       <form id="addBadgeForm">
         <div class="form-group">
-          <label for="newId">Badge ID</label>
-          <input type="text" id="newId" placeholder="e.g. TC-2026-328W-B2JD" required>
+          <label for="newId">ID du Badge</label>
+          <input type="text" id="newId" placeholder="ex. TC-2026-328W-B2JD" required>
         </div>
         <div class="form-group">
-          <label for="newName">Full Name</label>
-          <input type="text" id="newName" placeholder="Worker Name" required>
+          <label for="newName">Nom Complet</label>
+          <input type="text" id="newName" placeholder="Nom de l'ouvrier" required>
         </div>
         <div class="form-group">
-          <label for="newRole">Role / Trade</label>
-          <input type="text" id="newRole" placeholder="e.g. Mason, Electrician" required>
+          <label for="newRole">Rôle / Métier</label>
+          <input type="text" id="newRole" placeholder="ex. Maçon, Électricien" required>
         </div>
         <div class="form-group">
-          <label for="newStatus">Status</label>
+          <label for="newStatus">Statut</label>
           <select id="newStatus">
-            <option value="Active">Active</option>
-            <option value="Suspended">Suspended</option>
+            <option value="Active">Actif</option>
+            <option value="Suspended">Suspendu</option>
           </select>
         </div>
-        <button type="submit" id="saveBtn">Save to Cloud DB</button>
+        <button type="submit" id="saveBtn">Enregistrer dans la BDD Cloud</button>
       </form>
 
       <div class="badge-list" id="badgeList">
-        <p style="text-align: center; color: #9ca3af; font-size: 0.85rem;">Loading cloud database...</p>
+        <p style="text-align: center; color: #9ca3af; font-size: 0.85rem;">Chargement de la base de données cloud...</p>
       </div>
     </div>
 
@@ -69,7 +69,7 @@
       <div id="modalStatusBadge" class="modal-status-badge"></div>
       <div id="modalTitle" class="modal-title"></div>
       <div id="modalDetails" class="modal-details"></div>
-      <button id="modalDismissBtn" class="modal-action-btn">Dismiss</button>
+      <button id="modalDismissBtn" class="modal-action-btn">Fermer</button>
     </div>
   </div>
 
