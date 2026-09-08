@@ -81,7 +81,7 @@ async function performVerification(rawBadgeId) {
 
   checkIdInput.value = badgeId;
   verifyBtn.disabled = true;
-  verifyBtn.textContent = "Checking Cloud DB...";
+  verifyBtn.textContent = "Vérification dans le Cloud...";
 
   try {
     const docRef = doc(db, "badges", badgeId);
@@ -93,33 +93,33 @@ async function performVerification(rawBadgeId) {
 
       const detailsHtml = `
         <strong>ID:</strong> ${badgeId}<br>
-        <strong>Worker:</strong> ${worker.name || 'N/A'}<br>
-        <strong>Role:</strong> ${worker.role || 'N/A'}<br>
-        <strong>Status:</strong> <span style="color: ${isActive ? 'var(--success)' : 'var(--error)'}; font-weight: bold;">${worker.status}</span>
+        <strong>Ouvrier:</strong> ${worker.name || 'N/A'}<br>
+        <strong>Rôle:</strong> ${worker.role || 'N/A'}<br>
+        <strong>Statut:</strong> <span style="color: ${isActive ? 'var(--success)' : 'var(--error)'}; font-weight: bold;">${worker.status === 'Active' ? 'Actif' : worker.status === 'Suspended' ? 'Suspendu' : worker.status}</span>
       `;
 
       showModal(
         isActive,
-        isActive ? 'Legitimate Badge' : 'Inactive / Revoked Badge',
+        isActive ? 'Badge Légitime' : 'Badge Inactif / Révoqué',
         detailsHtml
       );
     } else {
       showModal(
         false,
-        'Unknown Badge',
-        `No registered record found for ID: <strong>${badgeId}</strong>`
+        'Badge Inconnu',
+        `Aucun enregistrement trouvé pour l'ID: <strong>${badgeId}</strong>`
       );
     }
   } catch (err) {
     console.error("Firestore Fetch Error:", err);
     showModal(
       false,
-      'Connection Error',
-      'Unable to reach database. Check console logs or network connectivity.'
+      'Erreur de Connexion',
+      'Impossible de contacter la base de données. Vérifiez la console ou votre connexion.'
     );
   } finally {
     verifyBtn.disabled = false;
-    verifyBtn.textContent = "Verify Badge";
+    verifyBtn.textContent = "Vérifier le Badge";
   }
 }
 
@@ -162,7 +162,7 @@ addBadgeForm.addEventListener('submit', async function(e) {
   const status = document.getElementById('newStatus').value;
 
   saveBtn.disabled = true;
-  saveBtn.textContent = "Saving...";
+  saveBtn.textContent = "Enregistrement...";
 
   try {
     await setDoc(doc(db, "badges", id), {
@@ -175,19 +175,19 @@ addBadgeForm.addEventListener('submit', async function(e) {
     addBadgeForm.reset();
   } catch (err) {
     console.error("Error saving badge:", err);
-    alert("Failed to save badge to cloud DB. Check browser console.");
+    alert("Échec de l'enregistrement dans la BDD cloud. Vérifiez la console.");
   } finally {
     saveBtn.disabled = false;
-    saveBtn.textContent = "Save to Cloud DB";
+    saveBtn.textContent = "Enregistrer dans la BDD Cloud";
   }
 });
 
 // REAL-TIME SYNC FOR ADMIN LIST
 onSnapshot(badgesCollection, (snapshot) => {
-  badgeListContainer.innerHTML = '<strong style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">LIVE BADGES IN CLOUD:</strong>';
+  badgeListContainer.innerHTML = '<strong style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">BADGES EN DIRECT DANS LE CLOUD:</strong>';
 
   if (snapshot.empty) {
-    badgeListContainer.innerHTML += '<p style="font-size:0.85rem; color:var(--text-muted);">No badges found in Firestore. Add one above!</p>';
+    badgeListContainer.innerHTML += '<p style="font-size:0.85rem; color:var(--text-muted);">Aucun badge trouvé dans Firestore. Ajoutez-en un ci-dessus !</p>';
     return;
   }
 
@@ -202,13 +202,13 @@ onSnapshot(badgesCollection, (snapshot) => {
       <div class="info">
         <div><strong>${id}</strong> - ${item.name}</div>
         <div style="color: var(--text-muted); font-size: 0.75rem;">${item.role}</div>
-        <span class="badge-status-tag ${isActive ? 'tag-active' : 'tag-suspended'}">${item.status}</span>
+        <span class="badge-status-tag ${isActive ? 'tag-active' : 'tag-suspended'}">${isActive ? 'Actif' : 'Suspendu'}</span>
       </div>
       <div class="action-group">
         <button class="status-btn" style="background-color: ${isActive ? '#f59e0b' : '#10b981'}; color: #000;">
-          ${isActive ? 'Suspend' : 'Activate'}
+          ${isActive ? 'Suspendre' : 'Activer'}
         </button>
-        <button class="delete-btn">Delete</button>
+        <button class="delete-btn">Supprimer</button>
       </div>
     `;
 
@@ -222,7 +222,7 @@ onSnapshot(badgesCollection, (snapshot) => {
     });
 
     div.querySelector('.delete-btn').addEventListener('click', async () => {
-      if (confirm(`Delete badge ${id} from cloud DB?`)) {
+      if (confirm(`Supprimer le badge ${id} de la BDD cloud ?`)) {
         await deleteDoc(doc(db, "badges", id));
       }
     });
@@ -231,7 +231,7 @@ onSnapshot(badgesCollection, (snapshot) => {
   });
 }, (error) => {
   console.error("Snapshot listener error:", error);
-  badgeListContainer.innerHTML = '<p style="color: var(--error); font-size: 0.85rem;">Error loading live data from Cloud DB.</p>';
+  badgeListContainer.innerHTML = '<p style="color: var(--error); font-size: 0.85rem;">Erreur lors du chargement des données depuis le Cloud.</p>';
 });
 
 // ADMIN PANEL TOGGLE
